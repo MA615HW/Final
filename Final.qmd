@@ -1,0 +1,301 @@
+---
+title: "615-Final"
+author: "Gary Wang"
+format: pdf
+editor: visual
+---
+
+# Introduction
+
+Bahrain, an island nation located in the Arabian Gulf, holds a unique position as a thriving hub for finance, trade, and culture in the Middle East. Despite its small size, Bahrain boasts a rich history dating back millennia, serving as a crossroads of ancient trade routes. Today, its strategic location and modern infrastructure make it a vital economic center in the region. Known for its progressive approach to governance and a diversifying economy, Bahrain has emerged as a key player in sectors such as banking, tourism, and technology. This project explores various dimensions of Bahrain’s identity, including its demographics, economy, and role within the Gulf region, while delving into its challenges and opportunities.
+
+## Bahrain at a glimpse
+
+### Map of Bahrain
+
+```{r}
+library(sf)
+library(ggplot2)
+
+bahrain <- st_read("https://raw.githubusercontent.com/akalati/bahrain-geojson/main/areas.json")
+
+ggplot(data = bahrain) +
+  geom_sf(fill = "lightblue", color = "darkblue") +
+  theme_minimal() +
+  labs(title = "Map of Bahrain")
+```
+
+```{r}
+library(maps)
+world <- map_data("world")
+
+ggplot() +
+  geom_polygon(data = world, aes(x = long, y = lat, group = group), 
+               fill = "lightgray", color = "white") +
+  geom_point(aes(x = 50.5832, y = 26.0667), color = "red", size = 3) + 
+  # Coordinates for Bahrain
+  theme_minimal() +
+  labs(title = "Bahrain's Location in the World") +
+  coord_quickmap()
+```
+
+### Government
+
+Bahrain is a constitutional monarchy led by King Hamad bin Isa Al Khalifa, with a government structure that blends traditional monarchy and modern governance. The bicameral legislature includes the Council of Representatives, elected by citizens, and the Shura Council, appointed by the King. This framework supports Bahrain’s progressive approach to governance, fostering political stability and enabling the country’s active participation in regional initiatives as a member of the Gulf Cooperation Council (GCC).
+
+### Economy
+
+Bahrain’s economy is one of the most diverse in the Gulf region, driven by key sectors such as finance, oil, and tourism. While oil production has historically been a cornerstone of the economy, Bahrain has proactively reduced its dependence on oil by becoming a regional financial hub, with banking and insurance industries contributing significantly to its GDP. The country has also invested in developing its tourism sector, leveraging attractions such as its rich cultural heritage and modern infrastructure.
+
+### Population
+
+Bahrain is home to a diverse population of over 1.7 million people, comprising both Bahraini nationals and a significant expatriate community. This multicultural society reflects the country’s historical role as a trade hub, attracting people from across the Middle East, South Asia, and beyond. Bahrainis enjoy a high literacy rate and access to advanced healthcare and education systems. The local culture is deeply rooted in Arab traditions, yet it is enriched by the presence of expatriates who contribute to the country’s workforce, particularly in sectors like construction, finance, and services.
+
+### Environment
+
+Bahrain’s natural environment is characterized by its arid climate, low-lying desert terrain, and surrounding waters of the Arabian Gulf. The nation comprises 33 islands, with Bahrain Island being the largest. Despite its small size and limited freshwater resources, Bahrain is home to diverse marine life and important ecosystems like mangroves and coral reefs. These ecosystems play a vital role in supporting biodiversity and protecting the coastline. However, the natural environment faces challenges such as land reclamation, desertification, and the impacts of climate change, including rising sea levels and extreme heat. Bahrain is actively working to address these issues through environmental conservation initiatives and sustainable urban planning.
+
+### History
+
+Bahrain has a rich history that dates back thousands of years, making it one of the most ancient trading hubs in the Gulf region. Known in antiquity as Dilmun, it served as a vital center for trade between Mesopotamia and the Indus Valley. Over centuries, Bahrain was ruled by various empires, including the Assyrians, Babylonians, Persians, and later the Portuguese in the 16th century. In 1783, the Al Khalifa family established control, and Bahrain became a British protectorate in the 19th century. The country gained independence in 1971 and has since developed into a modern state while preserving its historical and cultural heritage. Today, Bahrain’s legacy as a bridge between ancient civilizations and modern economic progress continues to define its identity.
+
+# Average Expenditure Per Visitor Per Trip
+
+## Data Description
+
+The dataset we choose provides insights into Bahrain's tourism economy by capturing the average daily expenditure per visitor in Bahraini Dinars (BHD) from 2017 to 2023, except 2020. It includes spending data for same-day visitors, overnight visitors, and the total visitor average, segmented by year and month. This information helps analyze seasonal trends, spending behaviors, and the overall economic impact of tourism in Bahrain.
+
+```{r}
+library(readr)
+exp_data <- read_csv("01-average-expenditure-per-visitor-per-trip.csv")
+head(exp_data)
+```
+
+## EDA
+
+The data set contains no missing data, so we will explore the data through several plots. However, the year 2020 contains several 0 values for same-day visitor expenditures. These values are not missing data but reflect the real-world impact of the COVID-19 pandemic, during which same-day travel to Bahrain was restricted due to global travel bans and safety measures. Keeping these 0 values is important as they represent the true disruption in visitor activity during that period, providing critical insights into the pandemic's effect on Bahrain’s tourism economy.
+
+### Bar plot of Average Daily Spend Over Time
+
+A line plot to show how average daily spend varies for each visitor type over time.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+exp_data_long <- exp_data %>%
+  pivot_longer(
+    cols = starts_with("Average Daily Spend"),
+    names_to = "Visitor_Type",
+    values_to = "Average_Spend"
+  )
+
+# Clean Visitor_Type labels for better readability
+exp_data_long$Visitor_Type <- gsub("Average Daily Spend\\n", "", exp_data_long$Visitor_Type)
+
+# Create the grouped bar plot
+ggplot(exp_data_long, aes(x = as.factor(Year), y = Average_Spend, fill = Visitor_Type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Average Daily Spend by Visitor Type (Grouped by Year)",
+    x = "Year",
+    y = "Average Daily Spend (BHD)",
+    fill = "Visitor Type"
+  )
+```
+
+### Box plot of Seasonal Trends
+
+A box plot to visualize the seasonal distribution of average spending across months.
+
+```{r}
+ggplot(exp_data, aes(x = Month, y = `Average Daily Spend\nTotal Visitors (BHD)`)) +
+  geom_boxplot(fill = "skyblue", color = "darkblue") +
+  labs(
+    title = "Seasonal Distribution of Total Visitor Spending",
+    x = "Month",
+    y = "Average Daily Spend (BHD)"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+### Average Daily Spend for Total Visitors
+
+```{r}
+ggplot(exp_data, aes(x = Month, y = `Average Daily Spend\nTotal Visitors (BHD)`, color = as.factor(Year), group = Year)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Average Daily Spend for Total Visitors by Month (2017-2023)",
+    x = "Month",
+    y = "Average Daily Spend (BHD)",
+    color = "Year"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### Average Daily Spend for Over Night Visitors
+
+```{r}
+ggplot(exp_data, aes(x = Month, y = `Average Daily Spend\nOvernight Visitors (BHD)`, color = as.factor(Year), group = Year)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Average Daily Spend for Overnight Visitors by Month (2017-2023)",
+    x = "Month",
+    y = "Average Daily Spend (BHD)",
+    color = "Year"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### Average Daily Spend for Same Day Visitors
+
+```{r}
+ggplot(exp_data, aes(x = Month, y = `Average Daily Spend\nSame-day Visitors (BHD)`, color = as.factor(Year), group = Year)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Average Daily Spend for Same-Day Visitors by Month (2017-2023)",
+    x = "Month",
+    y = "Average Daily Spend (BHD)",
+    color = "Year"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Prediction For The Next Three Years
+
+```{r}
+library(prophet)
+library(lubridate)
+
+# Convert Month to numeric
+month_to_num <- function(month_name) {
+  return(match(month_name, month.name))
+}
+exp_data$month_num <- sapply(exp_data$Month, month_to_num)
+
+# Create proper date column
+exp_data$date <- as.Date(paste(exp_data$Year, exp_data$month_num, "01", sep="-"))
+
+# Prepare data for Prophet
+prepare_prophet_data <- function(data, metric) {
+  df <- data.frame(
+    ds = data$date,
+    y = data[[metric]]
+  )
+  return(df)
+}
+
+# Prophet model
+create_forecast <- function(data, metric, future_years = 3) {
+  prophet_data <- prepare_prophet_data(data, metric)
+  
+  # Fit model
+  model <- prophet(
+    prophet_data,
+    yearly.seasonality = TRUE,
+    weekly.seasonality = FALSE,
+    daily.seasonality = FALSE,
+    seasonality.mode = 'multiplicative'
+  )
+  
+  # Create future dates
+  future_dates <- make_future_dataframe(model, periods = 
+                                          future_years * 12, 
+                                        freq = "month")
+  
+  # Make prediction
+  forecast <- predict(model, future_dates)
+  forecast$ds <- as.Date(forecast$ds)
+  return(list(model = model, forecast = forecast))
+}
+
+# Create forecasts for all three metrics
+metrics <- c(
+  "Average Daily Spend\nSame-day Visitors (BHD)",
+  "Average Daily Spend\nOvernight Visitors (BHD)",
+  "Average Daily Spend\nTotal Visitors (BHD)"
+)
+
+# Store results
+forecasts <- list()
+for (metric in metrics) {
+  forecasts[[metric]] <- create_forecast(exp_data, metric)
+}
+
+# Plot forecasts
+plot_forecast <- function(forecast_obj, metric_name) {
+  # Extract actual dates and values
+  actual_data <- data.frame(
+    ds = as.Date(exp_data$date),
+    y = exp_data[[metric_name]]
+  )
+  forecast_data <- forecast_obj$forecast
+  forecast_data$ds <- as.Date(forecast_data$ds)
+
+  ggplot() +
+    # Actual values
+    geom_point(data = actual_data, aes(x = ds, y = y, 
+                                       color = "Actual"), 
+               alpha = 0.6) +
+    # Predicted values
+    geom_line(data = forecast_data, aes(x = ds, y = yhat, 
+                                        color = "Predicted")) +
+    # Confidence interval
+    geom_ribbon(data = forecast_data,
+                aes(x = ds, ymin = yhat_lower, ymax = yhat_upper),
+                fill = "lightblue", alpha = 0.3) +
+    # Formatting
+    scale_color_manual(values = c("Actual" = "black", 
+                                  "Predicted" = "blue")) +
+    scale_x_date(date_breaks = "6 months", date_labels = "%Y-%m") +
+    labs(
+      title = paste("Forecast for", gsub("\n", " ", metric_name)),
+      x = "Date",
+      y = "Average Daily Spend (BHD)",
+      color = "Type"
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "bottom",
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )
+}
+
+for (metric in names(forecasts)) {
+  plot <- plot_forecast(forecasts[[metric]], metric)
+  print(plot)
+}
+
+# Extract forecasted values for the next three years
+get_forecast_summary <- function(forecast_obj, metric_name) {
+  # Get only future predictions
+  future_forecast <- tail(forecast_obj$forecast, 36)  # 36 months
+  
+  # Create summary dataframe
+  summary_df <- data.frame(
+    Date = as.Date(future_forecast$ds),
+    Metric = metric_name,
+    Predicted_Value = round(future_forecast$yhat, 2),
+    Lower_Bound = round(future_forecast$yhat_lower, 2),
+    Upper_Bound = round(future_forecast$yhat_upper, 2)
+  )
+  
+  return(summary_df)
+}
+
+forecast_summaries <- do.call(rbind, lapply(names(forecasts), function(metric) {
+  get_forecast_summary(forecasts[[metric]], metric)
+}))
+
+forecast_summaries
+```
+
+
+
+
+
